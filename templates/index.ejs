@@ -5,8 +5,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>File Processing</title>
-    <link rel="stylesheet" type="text/css" href="/static/styles_index.css">
-    <!-- <link rel="stylesheet" type="text/css" href="styles.css"> -->
+    <link rel="stylesheet" type="text/css" href="../static/styles_index.css">
+    <link rel="stylesheet" type="text/css" href="../static/styles.css">
 </head>
 <body>
     <header>
@@ -14,7 +14,7 @@
 			<img src="/static/dblogo.png" alt="Logo">
 		</div>
 		<div class="title">
-			<h1>Databyte</h1>
+			<h1 id="dbTitle">Databyte</h1>
 		</div>
 	</header>
     <div class="container">
@@ -33,12 +33,7 @@
                 <input type="file" id="file" name="file" required>
             </div>
 
-            <div class="form-group summary">
-                <label for="show_summary">Show Summary:</label>
-                <input type="checkbox" id="show_summary" name="show_summary">
-            </div>
-
-            <input type="submit" value="Process">
+            <input id="process-box" type="submit" value="Process">
         </form>
     </div>
     <div class="watermark-container">
