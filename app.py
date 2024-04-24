@@ -3,9 +3,9 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize, sent_tokenize
 import re
 from transformers import pipeline, BartTokenizer, BartForConditionalGeneration
-# import pytesseract
-# from pytesseract import Output
-# from PIL import Image
+import pytesseract
+from pytesseract import Output
+from PIL import Image
 from flask import Flask, render_template, request ,redirect , url_for , session 
 from flask_session import Session
 # from flask_session import FileSystemSessionInterface
@@ -59,7 +59,7 @@ def readable_summary(text):
 qa_pipeline = pipeline("question-answering", model="distilbert-base-cased-distilled-squad", tokenizer="distilbert-base-cased-distilled-squad")
 
 # Specify the Tesseract executable path
-# pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 
 app = Flask(__name__)
@@ -88,15 +88,21 @@ def process_file():
     
     # Get the choice of the user (image or pdf)
     file_type = request.form['file_type']
+    session['file_type'] = file_type
+    
+    if file_type == 'image':
+        # Example: Get the uploaded image file
+        uploaded_file = request.files['file']
+        name=uploaded_file.filename
+        if uploaded_file.filename == '':
+            return 'No selected file', 400
+        file_id = str(uuid.uuid4())  # Generate a unique ID for the file
+        file_path = os.path.join(UPLOAD_FOLDER, file_id)
+        uploaded_file.save(file_path)
+        session['file_path'] = file_path
+        # print(uploaded_file)
 
-    # if file_type == 'image':
-    #     # Example: Get the uploaded image file
-    #     uploaded_file = request.files['file']
-    #     # print(uploaded_file)
-
-    #     # Perform OCR on the image
-    #     with Image.open(uploaded_file) as image:
-    #         txt = pytesseract.image_to_string(image)
+        
 
     if file_type == 'pdf':
         # Example: Get the uploaded PDF file
@@ -109,7 +115,7 @@ def process_file():
         uploaded_file.save(file_path)
         session['file_path'] = file_path
         print(name)
-        return redirect(url_for('quest',filename=name))
+    return redirect(url_for('quest',filename=name))
        
 @app.route('/quest/<filename>',methods=['GET'])
 def quest(filename):
@@ -126,28 +132,36 @@ def upload(filename):
         print("Session before appending:", items)
         print('hello')
         file_path = session.get('file_path')
+
         if file_path is None or not os.path.exists(file_path):
             return "File not found", 400
-        with open(file_path, 'rb') as file:
-            file_data = file.read()
-        pdf_reader = PyPDF2.PdfReader(BytesIO(file_data))
+        
+        if session.get('file_type') == 'pdf':
+            with open(file_path, 'rb') as file:
+                file_data = file.read()
+            pdf_reader = PyPDF2.PdfReader(BytesIO(file_data))
 
-        # Get the number of pages in the PDF
-        num_pages =num_pages = len(pdf_reader.pages)
+            # Get the number of pages in the PDF
+            num_pages =num_pages = len(pdf_reader.pages)
 
-        # Initialize an empty string to store the extracted text
-        txt = ""
+            # Initialize an empty string to store the extracted text
+            txt = ""
 
-        # Iterate through all pages
-        for page_num in range(num_pages):
-            # Get the page
-            page = pdf_reader.pages[page_num]
+            # Iterate through all pages
+            for page_num in range(num_pages):
+                # Get the page
+                page = pdf_reader.pages[page_num]
 
-            # Extract text from the page
-            etext = page.extract_text()
+                # Extract text from the page
+                etext = page.extract_text()
 
-            # Append the text to the result string
-            txt+=etext
+                # Append the text to the result string
+                txt+=etext
+        
+        if session.get('file_type') == 'image':
+            # Perform OCR on the image
+            with Image.open(file_path) as image:
+                txt = pytesseract.image_to_string(image)
 
         sample_text = txt
         if sample_text == '':
